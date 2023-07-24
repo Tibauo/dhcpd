@@ -1,0 +1,25 @@
+---
+# tasks file for dhcpd
+- name: install packages
+  ansible.builtin.dnf:
+    name: "dhcp-server"
+    state: present
+
+- name: Push dhcpd conf
+  ansible.builtin.template:
+    src: dhcpd.conf.j2
+    dest: /etc/dhcp/dhcpd.conf
+  loop: "{{ pxe }}"
+
+- name: Firewall add dhcp service
+  ansible.posix.firewalld:
+    service: dhcp
+    permanent: yes
+    immediate: yes
+    state: enabled
+
+- name: Start dhcpd
+  ansible.builtin.service:
+    name: dhcpd
+    state: started
+    enabled: yes

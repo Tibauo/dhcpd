@@ -1,0 +1,44 @@
+authoritative;
+ddns-update-style interim;
+default-lease-time 14400;
+max-lease-time 14400;
+allow booting;
+allow bootp;
+option space pxelinux;
+option pxelinux.magic code 208 = string;
+option pxelinux.configfile code 209 = text;
+option pxelinux.pathprefix code 210 = text;
+option pxelinux.reboottime code 211 = unsigned integer 32;
+option architecture-type code 93 = unsigned integer 16;
+
+    #Default gateway
+    option routers                  {{ item.dhcp_gw }};
+    #DHCP network broadcast address
+    option broadcast-address        {{ item.dhcp_broadcast }};
+    #DHCP network subnet mask
+    option subnet-mask              {{ item.dhcp_mask }};
+    #IP address of DNS server
+    option domain-name-servers      {{ item.dhcp_gw }};
+    #Default NTP server
+    option ntp-servers              time.google.com;
+    #Default domain name
+    option domain-name              "monlab.local";
+
+
+subnet {{ item.dhcp_subnet }} netmask {{ item.dhcp_mask }} {
+  option routers {{ item.dhcp_gw }};
+  range {{ item.first }} {{ item.last }};
+  class "pxeclients" {
+    next-server {{ item.dhcp_gw }};
+    filename "pxelinux/pxelinux.0";
+  }
+  next-server {{ item.dhcp_addr }};
+}
+{% for host in item.servers %}
+host {{ host.hostname }} {
+  hardware ethernet {{ host.mac_address }};
+  fixed-address {{ host.ip_pxe }};
+  option host-name "{{ host.hostname }}";
+  filename "pxelinux/pxelinux.0";
+}
+{% endfor %}
